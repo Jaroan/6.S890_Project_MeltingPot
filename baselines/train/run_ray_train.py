@@ -78,7 +78,7 @@ def get_cli_args():
   
   parser.add_argument(
         "--wandb",
-        type=bool,
+        type=str,
         default=False,
         help="Whether to use WanDB logging.",
   )
@@ -132,17 +132,25 @@ if __name__ == "__main__":
         print("Either GPU is not available on this machine or not visible to this run. Training using CPU only.")
         configs.num_gpus = 0
 
-
+  if args.wandb:
+    import json
+    with open(os.path.expanduser("~") + "/keys.json") as json_file:
+      key = json.load(json_file)
+      my_wandb_api_key = key["my_wandb_api_key"]  # NOTE change here as well
+    os.environ["WANDB_API_KEY"] = my_wandb_api_key
+    os.environ["WANDB_MODE"] = "dryrun"
+    os.environ["WANDB_SAVE_CODE"] = "true"
   # Setup WanDB 
   if "WANDB_API_KEY" in os.environ and args.wandb:
     wandb_project = f'{args.exp}_{args.framework}'
     wandb_group = "meltingpot"
-
+    print("WanDB logging enabled.~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     # Set up Weights And Biases logging if API key is set in environment variable.
     wdb_callbacks = [
         WandbLoggerCallback(
+          entity="jasminejerryaloor",
             project=wandb_project,
-            group=wandb_group,
+            # group=wandb_group,
             api_key=os.environ["WANDB_API_KEY"],
             log_config=True,
         )
@@ -174,6 +182,6 @@ if __name__ == "__main__":
 
   best_result = results.get_best_result(metric="episode_reward_mean", mode="max")
   print(best_result)
-  
+  print("ERROR TEST ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
   ray.shutdown()
 

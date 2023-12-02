@@ -119,6 +119,7 @@ if __name__ == "__main__":
   parser.add_argument(
       "--video_dir",
       type=str,
+      default='/Users/jasmine/Jasmine/MIT/Sem3_Fall2023/6.s890_Multiagent_Learning/Project/melting-pot-code/Melting-Pot-Contest-2023/videos',
       help="Directory where you want to store evaluation videos",
   )
 

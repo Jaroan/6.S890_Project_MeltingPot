@@ -44,15 +44,20 @@ class MeltingPotEnv(multi_agent_env.MultiAgentEnv):
   def step(self, action_dict):
     """See base class."""
     actions = [action_dict[agent_id] for agent_id in self._ordered_agent_ids]
+    # print("-------------------------------------------")
+    # print("actions: ", actions)
     timestep = self._env.step(actions)
     rewards = {
         agent_id: timestep.reward[index]
         for index, agent_id in enumerate(self._ordered_agent_ids)
     }
+    # print("timestep.reward: ", timestep.reward)
+    # print("rewards: ", rewards)
     done = {'__all__': timestep.last()}
     info = {}
 
     observations = utils.timestep_to_observations(timestep)
+    # print("observations: ", observations)
     return observations, rewards, done, done, info
 
   def close(self):
