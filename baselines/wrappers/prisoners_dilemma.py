@@ -7,7 +7,7 @@ from baselines.train import utils
 
 
 
-class ProjectEnv(meltingpot_wrapper.MeltingPotEnv):
+class PrisonersEnv(meltingpot_wrapper.MeltingPotEnv):
   """Interfacing Melting Pot substrates and RLLib MultiAgentEnv."""
 
   def __init__(self, env: dmlab2d.Environment):
@@ -18,17 +18,12 @@ class ProjectEnv(meltingpot_wrapper.MeltingPotEnv):
     """
     print("ProjectEnv init---------------------", env)
     super().__init__(env)
-    self.alpha = 0.05
-    self.beta = 0.5
-    self.gamma = 0.99
-    self.lambda_value = 0.95
-    self.reward_traces = {}
 
 
   def reset(self, *args, **kwargs):
     """See base class."""
     timestep = self._env.reset()
-    self.reward_traces = {agent_id: np.zeros_like(timestep.reward) for agent_id in self._ordered_agent_ids}
+    # self.reward_traces = {agent_id: np.zeros_like(timestep.reward) for agent_id in self._ordered_agent_ids}
     return utils.timestep_to_observations(timestep), {}
 
   def step(self, action_dict):
@@ -42,45 +37,34 @@ class ProjectEnv(meltingpot_wrapper.MeltingPotEnv):
     #     for index, agent_id in enumerate(self._ordered_agent_ids)
     # }
     rewards = {}
-    rewards_sum = 0
     # print("reward_traces: ", self.reward_traces)
-    for index, agent_id in enumerate(self._ordered_agent_ids):
-        ri = timestep.reward[index]
-        et_i = self.reward_traces[agent_id]
+    # for index, agent_id in enumerate(self._ordered_agent_ids):
+        # ri = timestep.reward[index]
+        # et_i = self.reward_traces[agent_id]
         # print("ri: ", ri)
         # print("et_i: ", et_i)        
         # Update temporal smoothed rewards
-        et_i = self.gamma * self.lambda_value * et_i + ri
-        self.reward_traces[agent_id] = et_i
+        # et_i = self.gamma * self.lambda_value * et_i + ri
+        # self.reward_traces[agent_id] = et_i
 
-        # Calculate inequity aversion
-        inequity_aversion = 0
-        ia_1, ia_2 = 0, 0
-        for j_agent_id in self._ordered_agent_ids:
-            if j_agent_id != agent_id:
-                # print("truth value error",self.reward_traces[j_agent_id] - et_i)
-                max_diff_1 = np.maximum(self.reward_traces[j_agent_id] - et_i, 0)
-                max_diff_2 = np.maximum(et_i - self.reward_traces[j_agent_id], 0)
-                inequity_aversion += max_diff_1 + max_diff_2
-                ia_1 += max_diff_1
-                ia_2 += max_diff_2
-        # print("inequity_aversion: ", inequity_aversion)
-        # print("len(self._ordered_agent_ids): ", len(self._ordered_agent_ids))
+        # # Calculate inequity aversion
+        # inequity_aversion = 0
+        # for j_agent_id in self._ordered_agent_ids:
+        #     if j_agent_id != agent_id:
+        #         # print("truth value error",self.reward_traces[j_agent_id] - et_i)
+        #         max_diff_1 = np.maximum(self.reward_traces[j_agent_id] - et_i, 0)
+        #         max_diff_2 = np.maximum(et_i - self.reward_traces[j_agent_id], 0)
+        #         inequity_aversion += max_diff_1 + max_diff_2
+        # # print("inequity_aversion: ", inequity_aversion)
+        # # print("len(self._ordered_agent_ids): ", len(self._ordered_agent_ids))
 
         # rewards[agent_id] = ri - (self.alpha / (len(self._ordered_agent_ids) - 1)) * inequity_aversion - \
         #                       (self.beta / (len(self._ordered_agent_ids) - 1)) * inequity_aversion
         # rewards[agent_id] = np.mean(rewards[agent_id])
-        rewards[agent_id] = ri - (self.alpha / (len(self._ordered_agent_ids) - 1)) * ia_1 - \
-                              (self.beta / (len(self._ordered_agent_ids) - 1)) * ia_2
-        rewards[agent_id] = np.mean(rewards[agent_id])
-    # ## sum rewards for all agents and send that to each agent
-    # for index, _ in enumerate(self._ordered_agent_ids):
-    #     rewards_sum += timestep.reward[index]
-    # print("rewards_sum: ", rewards_sum)
-    # rewards = {
-    #     agent_id: rewards_sum
-    #     for index, agent_id in enumerate(self._ordered_agent_ids)
-    # }
+    rewards = {
+        agent_id: timestep.reward[index]
+        for index, agent_id in enumerate(self._ordered_agent_ids)
+    }
 
 
     # print("timestep.reward: ", timestep.reward)

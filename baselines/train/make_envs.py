@@ -1,5 +1,7 @@
 from baselines.wrappers.meltingpot_wrapper import MeltingPotEnv
 from baselines.wrappers.project_wrapper import ProjectEnv
+from baselines.wrappers.prisoners_dilemma import PrisonersEnv
+
 from meltingpot import substrate
 from baselines.wrappers.downsamplesubstrate_wrapper import DownSamplingSubstrateWrapper
 from ml_collections import config_dict
@@ -12,5 +14,6 @@ def env_creator(env_config):
   env = DownSamplingSubstrateWrapper(env, env_config['scaled'])
   # env = MeltingPotEnv(env)
   env = ProjectEnv(env)
+  # env = PrisonersEnv(env)
   return env
 
