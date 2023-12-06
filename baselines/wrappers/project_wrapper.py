@@ -33,62 +33,47 @@ class ProjectEnv(meltingpot_wrapper.MeltingPotEnv):
 
   def step(self, action_dict):
     """See base class."""
+    # Extract actions for each agent as per _ordered_agent_ids
     actions = [action_dict[agent_id] for agent_id in self._ordered_agent_ids]
+
+    #Step the ennvironment with actions list
     timestep = self._env.step(actions)
-    # print("-------------------------------------------")
-    # print("actions: ", actions)
-    # rewards = {
-    #     agent_id: timestep.reward[index]
-    #     for index, agent_id in enumerate(self._ordered_agent_ids)
-    # }
+
+    #Empty dict to store rewards
     rewards = {}
-    rewards_sum = 0
-    # print("reward_traces: ", self.reward_traces)
+
+    #Iterate over each agent to calculate individual reward
     for index, agent_id in enumerate(self._ordered_agent_ids):
+        #Immediate reward
         ri = timestep.reward[index]
+        #uUdate reward trace for temporal smoothing
         et_i = self.reward_traces[agent_id]
-        # print("ri: ", ri)
-        # print("et_i: ", et_i)        
-        # Update temporal smoothed rewards
         et_i = self.gamma * self.lambda_value * et_i + ri
         self.reward_traces[agent_id] = et_i
 
         # Calculate inequity aversion
         inequity_aversion = 0
+        # Initialize to 0
         ia_1, ia_2 = 0, 0
         for j_agent_id in self._ordered_agent_ids:
             if j_agent_id != agent_id:
-                # print("truth value error",self.reward_traces[j_agent_id] - et_i)
+                #Calculate differences in reward traces, add
                 max_diff_1 = np.maximum(self.reward_traces[j_agent_id] - et_i, 0)
                 max_diff_2 = np.maximum(et_i - self.reward_traces[j_agent_id], 0)
                 inequity_aversion += max_diff_1 + max_diff_2
                 ia_1 += max_diff_1
                 ia_2 += max_diff_2
-        # print("inequity_aversion: ", inequity_aversion)
-        # print("len(self._ordered_agent_ids): ", len(self._ordered_agent_ids))
 
-        # rewards[agent_id] = ri - (self.alpha / (len(self._ordered_agent_ids) - 1)) * inequity_aversion - \
-        #                       (self.beta / (len(self._ordered_agent_ids) - 1)) * inequity_aversion
-        # rewards[agent_id] = np.mean(rewards[agent_id])
-        rewards[agent_id] = ri - (self.alpha / (len(self._ordered_agent_ids) - 1)) * ia_1 - \
-                              (self.beta / (len(self._ordered_agent_ids) - 1)) * ia_2
+        agents_count = len(self._ordered_agent_ids) - 1
+        
+        #Reward adjustment based on IA
+        rewards[agent_id] = ri - (self.alpha / agents_count) * ia_1 - \
+                              (self.beta / agents_count) * ia_2
         rewards[agent_id] = np.mean(rewards[agent_id])
-    # ## sum rewards for all agents and send that to each agent
-    # for index, _ in enumerate(self._ordered_agent_ids):
-    #     rewards_sum += timestep.reward[index]
-    # print("rewards_sum: ", rewards_sum)
-    # rewards = {
-    #     agent_id: rewards_sum
-    #     for index, agent_id in enumerate(self._ordered_agent_ids)
-    # }
 
-
-    # print("timestep.reward: ", timestep.reward)
-    # print("rewards: ", rewards)
     done = {'__all__': timestep.last()}
     info = {}
-    # print("timestep.reward: ", timestep.reward)
-    # print("rewards: ", rewards)
+
     observations = utils.timestep_to_observations(timestep)
     return observations, rewards, done, done, info
 
